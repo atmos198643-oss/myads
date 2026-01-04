@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <title>Digital Board Remote</title>
+    <style>
+        body { background: #000; color: white; font-family: sans-serif; margin: 0; padding: 10px; overflow: hidden; }
+        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; height: 95vh; }
+        .card { background: #111; border: 1px solid #333; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 10px; }
+        .card img { max-width: 100%; height: 120px; object-fit: cover; border-radius: 5px; }
+        .title { color: #FFD700; font-size: 1.2rem; font-weight: bold; margin-top: 5px; }
+        .price { color: #00FF7F; font-size: 1.1rem; }
+    </style>
+</head>
+<body>
+    <div class="grid" id="board">Загрузка...</div>
+
+    <script>
+        // Ссылка на твою таблицу в формате CSV
+        const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQkJg-ateJ916_iAnG4ZUigWnVAh5Rhm0j7wutgrkf2Kl71EIckZiuwcZ4rvs8qEqTqfFEJHwaMdyZc/pub?output=csv";
+
+        async function updateData() {
+            try {
+                const response = await fetch(url);
+                const data = await response.text();
+                const rows = data.split('\n').map(row => row.split(','));
+                
+                let html = "";
+                // Берем первые 16 строк после шапки
+                for (let i = 1; i <= 16; i++) {
+                    const r = rows[i];
+                    if (r && r[1] && r[1].length > 1) {
+                        html += `
+                        <div class="card">
+                            <img src="${r[3].replace(/"/g, '')}">
+                            <div class="title">${r[1].replace(/"/g, '')}</div>
+                            <div class="price">${r[2].replace(/"/g, '')}</div>
+                        </div>`;
+                    } else {
+                        html += `<div class="card"><div style="color:#333">RESERVED</div></div>`;
+                    }
+                }
+                document.getElementById('board').innerHTML = html;
+            } catch (e) { console.log("Сбой обновления..."); }
+        }
+
+        updateData();
+        setInterval(updateData, 10000); // Проверять таблицу каждые 10 секунд!
+    </script>
+</body>
+</html>
