@@ -1,75 +1,70 @@
 <!DOCTYPE html>
-<html lang="el">
+<html>
 <head>
     <meta charset="UTF-8">
-    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&display=swap" rel="stylesheet">
+    <title>Display</title>
     <style>
-        body { background: #000; color: #fff; font-family: 'Oswald', sans-serif; margin: 0; padding: 15px; overflow: hidden; }
-        .grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(3, 1fr); gap: 20px; height: 95vh; }
-        .card { background: #0a0a0a; border: 1px solid #222; border-radius: 12px; display: flex; flex-direction: column; align-items: center; padding: 15px; box-sizing: border-box; transition: all 0.8s ease-in-out; }
-        .card.active { transform: scale(1.06); border-color: #FFD700; background: #111; z-index: 10; }
-        .img-container { width: 100%; height: 65%; background: #151515; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-        .card img { width: 100%; height: 100%; object-fit: cover; }
-        .title { color: #FFFFFF; font-size: 1.7vw; font-weight: 500; text-transform: uppercase; margin: 15px 0 5px 0; text-align: center; }
-        .price { color: #FFD700; font-size: 2.4vw; font-weight: 700; }
-        .empty { color: #111; }
+        body { background: #000; color: #fff; font-family: sans-serif; margin: 0; padding: 10px; }
+        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; height: 95vh; }
+        .card { background: #111; border: 2px solid #333; border-radius: 10px; padding: 10px; text-align: center; transition: 0.5s; }
+        .card.active { border-color: gold; transform: scale(1.05); }
+        .img-box { width: 100%; height: 150px; background: #000; margin-bottom: 10px; }
+        .img-box img { width: 100%; height: 100%; object-fit: cover; }
+        .title { font-size: 1.5vw; font-weight: bold; color: #fff; text-transform: uppercase; }
+        .price { font-size: 2vw; color: gold; font-weight: bold; margin-top: 5px; }
     </style>
 </head>
 <body>
-    <div class="grid" id="board">Загрузка данных...</div>
+    <div id="board" class="grid">Загрузка...</div>
 
     <script>
         const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQkJg-ateJ916_iAnG4ZUigWnVAh5Rhm0j7wutgrkf2Kl71EIckZiuwcZ4rvs8qEqTqfFEJHwaMdyZc/pub?output=csv";
 
-        function clean(str) { return str ? str.replace(/["\r]/g, '').trim() : ""; }
-
         async function update() {
             try {
-                const resp = await fetch(url + "&nocache=" + Date.now());
-                const text = await resp.text();
-                const rows = text.split('\n');
-                let html = "";
+                const r = await fetch(url + "&t=" + Date.now());
+                const t = await r.text();
                 
+                // Простейший способ разбить CSV на строки
+                const rows = t.split('\n');
+                let h = "";
+
+                // Берем 12 товаров (строки с 1 по 12)
                 for (let i = 1; i <= 12; i++) {
                     if (rows[i]) {
+                        // Разбиваем строку по запятой
                         const cols = rows[i].split(',');
-                        const title = clean(cols[1]);
-                        const price = clean(cols[2]);
-                        const imgSrc = clean(cols[3]);
+                        // Убираем лишние кавычки
+                        const name = (cols[1] || "").replace(/"/g, "");
+                        const price = (cols[2] || "").replace(/"/g, "");
+                        const img = (cols[3] || "").replace(/"/g, "").trim();
 
-                        if (title) {
-                            html += `
-                            <div class="card" id="card-${i}">
-                                <div class="img-container">
-                                    <img src="${imgSrc}" onerror="this.style.display='none';">
-                                </div>
-                                <div class="title">${title}</div>
-                                <div class="price">${price}</div>
-                            </div>`;
-                        } else {
-                            html += `<div class="card"><div class="empty">.</div></div>`;
-                        }
+                        h += `
+                        <div class="card" id="c${i}">
+                            <div class="img-box"><img src="${img}" onerror="this.style.display='none'"></div>
+                            <div class="title">${name}</div>
+                            <div class="price">${price}</div>
+                        </div>`;
                     }
                 }
-                document.getElementById("board").innerHTML = html;
-            } catch (e) { 
-                document.getElementById("board").innerHTML = "Ошибка связи с таблицей";
+                document.getElementById("board").innerHTML = h;
+            } catch (err) {
+                document.getElementById("board").innerHTML = "Ошибка данных";
             }
         }
 
+        // Анимация
         let cur = 1;
         setInterval(() => {
-            const cards = document.querySelectorAll('.card');
-            if(cards.length > 0) {
-                cards.forEach(c => c.classList.remove('active'));
-                const active = document.getElementById(`card-${cur}`);
-                if (active) active.classList.add('active');
-                cur = (cur % cards.length) + 1;
-            }
-        }, 4000);
+            const all = document.querySelectorAll('.card');
+            all.forEach(el => el.classList.remove('active'));
+            const a = document.getElementById('c' + cur);
+            if (a) a.classList.add('active');
+            cur = cur >= 12 ? 1 : cur + 1;
+        }, 3000);
 
         update();
-        setInterval(update, 30000);
+        setInterval(update, 20000); // Обновление данных раз в 20 секунд
     </script>
 </body>
 </html>
