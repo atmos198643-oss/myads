@@ -2,91 +2,69 @@
 <html lang="el">
 <head>
     <meta charset="UTF-8">
-    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&display=swap" rel="stylesheet">
     <style>
         body { 
             background: #000; 
             color: #fff; 
             font-family: 'Oswald', sans-serif; 
-            margin: 0; 
-            padding: 15px; 
-            overflow: hidden; 
+            margin: 0; padding: 15px; overflow: hidden; 
         }
         .grid { 
             display: grid; 
             grid-template-columns: repeat(4, 1fr); 
             grid-template-rows: repeat(3, 1fr); 
-            gap: 20px; 
-            height: 95vh; 
+            gap: 20px; height: 95vh; 
         }
         .card { 
-            background: #111; 
-            border: 4px solid #222; 
-            border-radius: 20px; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            padding: 15px; 
-            box-sizing: border-box; 
-            transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            position: relative;
+            background: #0a0a0a; 
+            border: 1px solid #222; 
+            border-radius: 12px; 
+            display: flex; flex-direction: column; align-items: center; 
+            padding: 15px; box-sizing: border-box; 
+            transition: all 0.8s ease-in-out; 
         }
-        /* Тот самый плавающий эффект */
+        /* Мягкий эффект увеличения без красного */
         .card.active { 
-            transform: scale(1.08); 
-            border-color: #ff0000; 
-            box-shadow: 0 0 30px rgba(255, 0, 0, 0.5); 
+            transform: scale(1.06); 
+            border-color: #FFD700; 
+            background: #111;
+            box-shadow: 0 10px 30px rgba(0,0,0,1);
             z-index: 10;
-            background: #1a1a1a;
         }
         .img-container { 
-            width: 100%; 
-            height: 60%; 
-            background: #1a1a1a; 
-            border-radius: 12px; 
+            width: 100%; height: 65%; 
+            background: #151515; border-radius: 8px; 
             overflow: hidden; 
-            border-bottom: 5px solid #ff0000;
         }
-        .card img { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: cover; 
-        }
+        .card img { width: 100%; height: 100%; object-fit: cover; transition: opacity 0.5s; }
+        
         .title { 
-            color: #FFFFFF; 
-            font-size: 1.8vw; 
-            text-transform: uppercase; 
-            margin: 12px 0 5px 0; 
-            text-align: center;
-            line-height: 1.1;
+            color: #FFFFFF; font-size: 1.7vw; font-weight: 500;
+            text-transform: uppercase; margin: 15px 0 5px 0; 
+            text-align: center; letter-spacing: 1px;
         }
         .price { 
-            color: #FFD700; /* Желтый */
-            font-size: 2.3vw; 
-            font-weight: 900; 
-            text-shadow: 2px 2px 5px rgba(0,0,0,0.8);
+            color: #FFD700; font-size: 2.4vw; font-weight: 700; 
         }
+        .empty { color: #1a1a1a; }
     </style>
 </head>
 <body>
     <div class="grid" id="board"></div>
 
     <script>
-        const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQkJg-ateJ916_iAnG4ZUigWnVAh5Rhm0j7wutgrkf2Kl71EIckZiuwcZ4rvs8qEqTqfFEJHwaMdyZc/pub?output=csv";
+        const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQkJg-ateJ916_iAnG4ZUigWnVAh5Rhm0j7wutgrkf2Kl71EIckZiuwcZ4rvs8qEqTqfFEJHwa)dyZc/pub?output=csv";
 
-        // Функция, которая чистит данные от кавычек и пробелов
-        function clean(str) {
-            if (!str) return "";
-            return str.replace(/["\r]/g, '').trim();
-        }
+        function clean(str) { return str ? str.replace(/["\r]/g, '').trim() : ""; }
 
         async function update() {
             try {
                 const resp = await fetch(url + "&nocache=" + Date.now());
                 const text = await resp.text();
                 const rows = text.split('\n');
-                
                 let html = "";
+                
                 for (let i = 1; i <= 12; i++) {
                     if (rows[i]) {
                         const cols = rows[i].split(',');
@@ -98,32 +76,31 @@
                             html += `
                             <div class="card" id="card-${i}">
                                 <div class="img-container">
-                                    <img src="${imgSrc}" onerror="this.src='https://via.placeholder.com/400x250/333/fff?text=IMAGE+ERROR'">
+                                    <img src="${imgSrc}" onerror="this.style.display='none'; this.parentElement.style.background='#1a1a1a';">
                                 </div>
                                 <div class="title">${title}</div>
                                 <div class="price">${price}</div>
                             </div>`;
                         } else {
-                            html += `<div class="card"><div style="color:#222">RESERVED</div></div>`;
+                            html += `<div class="card"><div class="empty">.</div></div>`;
                         }
                     }
                 }
-                const board = document.getElementById("board");
-                if (board.innerHTML !== html) board.innerHTML = html;
-            } catch (e) { console.log("Fetch error"); }
+                document.getElementById("board").innerHTML = html;
+            } catch (e) { console.log("Error"); }
         }
 
-        // Анимация увеличения (плавающая)
         let cur = 1;
         setInterval(() => {
-            document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
-            const activeCard = document.getElementById(`card-${cur}`);
-            if (activeCard) activeCard.classList.add('active');
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(c => c.classList.remove('active'));
+            const active = document.getElementById(`card-${cur}`);
+            if (active) active.classList.add('active');
             cur = (cur % 12) + 1;
         }, 4000);
 
         update();
-        setInterval(update, 20000); // Обновление данных из таблицы
+        setInterval(update, 30000);
     </script>
 </body>
 </html>
