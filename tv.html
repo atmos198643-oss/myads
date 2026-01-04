@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { background: #000; color: #fff; font-family: sans-serif; margin: 0; padding: 15px; overflow: hidden; }
+        .grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(3, 1fr); gap: 20px; height: 95vh; }
+        .card { background: #111; border: 1px solid #333; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 15px; transition: 0.8s; }
+        /* Эффект увеличения */
+        .card.active { transform: scale(1.08); border-color: gold; background: #1a1a1a; z-index: 10; }
+        .img-box { width: 100%; height: 60%; background: #000; border-radius: 8px; overflow: hidden; }
+        .img-box img { width: 100%; height: 100%; object-fit: cover; }
+        .title { font-size: 1.8vw; font-weight: bold; margin: 10px 0; text-transform: uppercase; text-align: center; }
+        .price { font-size: 2.3vw; color: gold; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div id="board" class="grid">Загрузка...</div>
+    <script>
+        const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQkJg-ateJ916_iAnG4ZUigWnVAh5Rhm0j7wutgrkf2Kl71EIckZiuwcZ4rvs8qEqTqfFEJHwaMdyZc/pub?output=csv";
+        async function update() {
+            try {
+                const r = await fetch(url + "&t=" + Date.now());
+                const t = await r.text();
+                const rows = t.split("\n");
+                let h = "";
+                for (let i = 1; i <= 12; i++) {
+                    if (rows[i]) {
+                        const c = rows[i].split(",");
+                        const name = (c[1] || "").replace(/"/g, "");
+                        const price = (c[2] || "").replace(/"/g, "");
+                        const img = (c[3] || "").replace(/"/g, "").trim();
+                        h += `<div class="card" id="c${i}">
+                            <div class="img-box"><img src="${img}" onerror="this.style.display='none'"></div>
+                            <div class="title">${name}</div>
+                            <div class="price">${price}</div>
+                        </div>`;
+                    }
+                }
+                document.getElementById("board").innerHTML = h;
+            } catch (e) { console.log("Error"); }
+        }
+        let cur = 1;
+        setInterval(() => {
+            document.querySelectorAll('.card').forEach(el => el.classList.remove('active'));
+            const a = document.getElementById('c' + cur);
+            if (a) a.classList.add('active');
+            cur = cur >= 12 ? 1 : cur + 1;
+        }, 4000);
+        update(); setInterval(update, 30000);
+    </script>
+</body>
+</html>
