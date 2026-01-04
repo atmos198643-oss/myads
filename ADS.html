@@ -2,50 +2,61 @@
 <html lang="el">
 <head>
     <meta charset="UTF-8">
-    <title>Digital Board Remote</title>
+    <title>Digital Board Pro</title>
     <style>
-        body { background: #000; color: white; font-family: sans-serif; margin: 0; padding: 10px; overflow: hidden; }
-        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; height: 95vh; }
-        .card { background: #111; border: 1px solid #333; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 10px; }
-        .card img { max-width: 100%; height: 120px; object-fit: cover; border-radius: 5px; }
-        .title { color: #FFD700; font-size: 1.2rem; font-weight: bold; margin-top: 5px; }
-        .price { color: #00FF7F; font-size: 1.1rem; }
+        body { background: #000; color: #fff; font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 10px; overflow: hidden; }
+        .grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); gap: 10px; height: 97vh; }
+        .card { background: #111; border: 1px solid #333; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 10px; transition: all 0.5s; }
+        .card img { width: 100%; height: 60%; object-fit: cover; border-radius: 5px; background: #222; }
+        .title { color: #FFD700; font-size: 1.2vw; font-weight: bold; margin: 5px 0; height: 1.5em; overflow: hidden; }
+        .price { color: #00FF7F; font-size: 1.1vw; font-weight: bold; }
+        .empty { color: #444; font-size: 0.8vw; }
     </style>
 </head>
 <body>
-    <div class="grid" id="board">Загрузка...</div>
+    <div class="grid" id="board"></div>
 
     <script>
-        // Ссылка на твою таблицу в формате CSV
-        const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQkJg-ateJ916_iAnG4ZUigWnVAh5Rhm0j7wutgrkf2Kl71EIckZiuwcZ4rvs8qEqTqfFEJHwaMdyZc/pub?output=csv";
+        const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQkJg-ateJ916_iAnG4ZUigWnVAh5Rhm0j7wutgrkf2Kl71EIckZiuwcZ4rvs8qEqTqfFEJHwaMdyZc/pub?output=csv";
 
-        async function updateData() {
+        async function updateBoard() {
             try {
-                const response = await fetch(url);
+                const response = await fetch(csvUrl + "&nocache=" + new Date().getTime());
                 const data = await response.text();
-                const rows = data.split('\n').map(row => row.split(','));
+                const rows = data.split("\n").map(r => r.split(","));
+                const board = document.getElementById("board");
                 
-                let html = "";
-                // Берем первые 16 строк после шапки
+                let newHtml = "";
                 for (let i = 1; i <= 16; i++) {
-                    const r = rows[i];
-                    if (r && r[1] && r[1].length > 1) {
-                        html += `
-                        <div class="card">
-                            <img src="${r[3].replace(/"/g, '')}">
-                            <div class="title">${r[1].replace(/"/g, '')}</div>
-                            <div class="price">${r[2].replace(/"/g, '')}</div>
-                        </div>`;
+                    const row = rows[i];
+                    // Очистка от кавычек Google
+                    const title = row && row[1] ? row[1].replace(/"/g, '') : "";
+                    const price = row && row[2] ? row[2].replace(/"/g, '') : "";
+                    const img = row && row[3] ? row[3].replace(/"/g, '').trim() : "";
+
+                    if (title.length > 1) {
+                        newHtml += `
+                            <div class="card">
+                                <img src="${img}" onerror="this.src='https://via.placeholder.com/200x120?text=No+Photo'">
+                                <div class="title">${title}</div>
+                                <div class="price">${price}</div>
+                            </div>`;
                     } else {
-                        html += `<div class="card"><div style="color:#333">RESERVED</div></div>`;
+                        newHtml += `
+                            <div class="card">
+                                <div class="empty">RESERVED<br>WhatsApp: +30...</div>
+                            </div>`;
                     }
                 }
-                document.getElementById('board').innerHTML = html;
-            } catch (e) { console.log("Сбой обновления..."); }
+                // Обновляем экран только если данные реально изменились
+                if (board.innerHTML !== newHtml) {
+                    board.innerHTML = newHtml;
+                }
+            } catch (e) { console.error("Update error"); }
         }
 
-        updateData();
-        setInterval(updateData, 10000); // Проверять таблицу каждые 10 секунд!
+        updateBoard();
+        setInterval(updateBoard, 20000); // Проверка раз в 20 секунд (оптимально для ТВ)
     </script>
 </body>
 </html>
